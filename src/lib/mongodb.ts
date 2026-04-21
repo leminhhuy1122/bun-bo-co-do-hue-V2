@@ -3,12 +3,13 @@ import { Db, MongoClient } from "mongodb";
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017";
 const MONGODB_DB_NAME = process.env.MONGODB_DB_NAME || "bun_bo_hue_co_do";
+const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
 const MONGODB_DNS_SERVERS = (process.env.MONGODB_DNS_SERVERS || "8.8.8.8,1.1.1.1")
   .split(",")
   .map((server) => server.trim())
   .filter(Boolean);
 
-if (MONGODB_URI.startsWith("mongodb+srv://")) {
+if (IS_DEVELOPMENT && MONGODB_URI.startsWith("mongodb+srv://")) {
   if (MONGODB_DNS_SERVERS.length > 0) {
     dns.setServers(MONGODB_DNS_SERVERS);
   }
@@ -26,7 +27,7 @@ declare global {
 let clientPromise: Promise<MongoClient>;
 
 async function getResolvedMongoUri(): Promise<string> {
-  if (!MONGODB_URI.startsWith("mongodb+srv://")) {
+  if (!MONGODB_URI.startsWith("mongodb+srv://") || !IS_DEVELOPMENT) {
     return MONGODB_URI;
   }
 
@@ -75,7 +76,7 @@ async function connectMongoClient(): Promise<MongoClient> {
   return client.connect();
 }
 
-if (process.env.NODE_ENV === "development") {
+if (IS_DEVELOPMENT) {
   if (!global.__mongoClientPromise) {
     global.__mongoClientPromise = connectMongoClient();
   }
