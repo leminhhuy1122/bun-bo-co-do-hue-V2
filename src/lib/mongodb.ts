@@ -24,7 +24,7 @@ declare global {
   var __mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-let clientPromise: Promise<MongoClient>;
+let clientPromise: Promise<MongoClient> | undefined;
 
 async function getResolvedMongoUri(): Promise<string> {
   if (!MONGODB_URI.startsWith("mongodb+srv://") || !IS_DEVELOPMENT) {
@@ -72,22 +72,77 @@ async function getResolvedMongoUri(): Promise<string> {
 
 async function connectMongoClient(): Promise<MongoClient> {
   const resolvedUri = await getResolvedMongoUri();
-  const client = new MongoClient(resolvedUri);
+  const client = new MongoClient(resolvedUri, {
+    retryReads: true,
+    retryWrites: true,
+    serverSelectionTimeoutMS: 10000,
+    connectTimeoutMS: 10000,
+    socketTimeoutMS: 45000,
+    maxPoolSize: 20,
+  });
   return client.connect();
 }
 
-if (IS_DEVELOPMENT) {
-  if (!global.__mongoClientPromise) {
-    global.__mongoClientPromise = connectMongoClient();
+function resetClientPromise() {
+  if (IS_DEVELOPMENT) {
+    global.__mongoClientPromise = undefined;
   }
-  clientPromise = global.__mongoClientPromise;
-} else {
-  clientPromise = connectMongoClient();
+  clientPromise = undefined;
+}
+
+function getClientPromise() {
+  if (IS_DEVELOPMENT) {
+    if (!global.__mongoClientPromise) {
+      global.__mongoClientPromise = connectMongoClient().catch((error) => {
+        resetClientPromise();
+        throw error;
+      });
+    }
+
+    return global.__mongoClientPromise;
+  }
+
+  if (!clientPromise) {
+    clientPromise = connectMongoClient().catch((error) => {
+      resetClientPromise();
+      throw error;
+    });
+  }
+
+  return clientPromise;
+}
+
+function isTransientMongoError(error: unknown): boolean {
+  const message = String((error as any)?.message || "").toLowerCase();
+  const code = String((error as any)?.code || "").toLowerCase();
+  const causeCode = String((error as any)?.cause?.code || "").toLowerCase();
+  const name = String((error as any)?.name || "").toLowerCase();
+
+  return (
+    name.includes("mongonetworkerror") ||
+    message.includes("ssl") ||
+    message.includes("tls") ||
+    message.includes("connection") ||
+    code.includes("econnreset") ||
+    code.includes("etimedout") ||
+    causeCode.includes("err_ssl") ||
+    causeCode.includes("econnreset")
+  );
 }
 
 export async function getDb(): Promise<Db> {
-  const client = await clientPromise;
-  return client.db(MONGODB_DB_NAME);
+  try {
+    const client = await getClientPromise();
+    return client.db(MONGODB_DB_NAME);
+  } catch (error) {
+    if (!isTransientMongoError(error)) {
+      throw error;
+    }
+
+    resetClientPromise();
+    const client = await getClientPromise();
+    return client.db(MONGODB_DB_NAME);
+  }
 }
 
 export async function getNextSequence(sequenceName: string): Promise<number> {
