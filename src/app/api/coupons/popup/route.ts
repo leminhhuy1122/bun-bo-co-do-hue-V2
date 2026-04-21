@@ -1,6 +1,10 @@
 // API lấy danh sách coupon hiển thị trong popup
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import promosData from "@/data/promos.json";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 function normalizePopupGradient(rawGradient?: string | null): string {
   if (!rawGradient) {
@@ -66,13 +70,33 @@ export async function GET() {
     });
   } catch (error: any) {
     console.error("Popup Coupons GET Error:", error);
+
+    const fallbackCoupons = (promosData as any[])
+      .slice(0, 3)
+      .map((promo, index) => ({
+        id: index + 1,
+        code: String(promo.code || "").toUpperCase(),
+        description: promo.description || null,
+        discount_type: promo.discountType === "fixed" ? "fixed" : "percentage",
+        discount_value: Number(promo.discountValue || 0),
+        min_order_amount: Number(promo.minOrderValue || 0),
+        max_discount_amount:
+          promo.maxDiscount === undefined || promo.maxDiscount === null
+            ? null
+            : Number(promo.maxDiscount),
+        popup_badge: index === 0 ? "Hot" : index === 1 ? "Uu dai" : "Deal",
+        popup_gradient: normalizePopupGradient(null),
+        popup_priority: index + 1,
+      }));
+
     return NextResponse.json(
       {
-        success: false,
-        error: "Không thể tải mã giảm giá popup",
-        details: error.message,
+        success: true,
+        data: fallbackCoupons,
+        fallback: true,
+        warning: "Không thể kết nối cơ sở dữ liệu, đang dùng dữ liệu dự phòng",
       },
-      { status: 500 }
+      { status: 200 }
     );
   }
 }

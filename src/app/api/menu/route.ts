@@ -2,6 +2,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, getNextSequence } from "@/lib/mongodb";
 import { syncMenuToJson } from "@/lib/syncMenu";
+import menuData from "@/data/menu.json";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+function getMenuFallback(category?: string | null, available?: string | null) {
+  let items = (menuData as any[]).map((item, index) => ({
+    id: index + 1,
+    name: item.name,
+    description: item.description,
+    price: Number(item.price || 0),
+    category: item.category,
+    image: item.image || null,
+    popular: Boolean(item.popular),
+    spicy_level: Number(item.spicyLevel || 0),
+    available: item.available !== false,
+  }));
+
+  if (category) {
+    items = items.filter((item) => item.category === category);
+  }
+
+  if (available !== "false") {
+    items = items.filter((item) => item.available !== false);
+  }
+
+  return items;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,13 +75,20 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error("Menu API Error:", error);
+    const fallbackItems = getMenuFallback(
+      request.nextUrl.searchParams.get("category"),
+      request.nextUrl.searchParams.get("available")
+    );
+
     return NextResponse.json(
       {
-        success: false,
-        error: "Không thể tải thực đơn",
-        details: error.message,
+        success: true,
+        data: fallbackItems,
+        count: fallbackItems.length,
+        fallback: true,
+        warning: "Không thể kết nối cơ sở dữ liệu, đang dùng dữ liệu dự phòng",
       },
-      { status: 500 }
+      { status: 200 }
     );
   }
 }
