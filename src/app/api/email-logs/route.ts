@@ -122,8 +122,25 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error("Error fetching email logs:", error);
     return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
+      {
+        success: true,
+        data: [],
+        stats: {
+          total: 0,
+          sent: 0,
+          failed: 0,
+          pending: 0,
+        },
+        pagination: {
+          page: 1,
+          limit: 50,
+          totalPages: 0,
+          totalCount: 0,
+        },
+        fallback: true,
+        warning: "Không thể kết nối cơ sở dữ liệu, đang dùng dữ liệu dự phòng",
+      },
+      { status: 200 }
     );
   }
 }

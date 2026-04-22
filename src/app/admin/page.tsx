@@ -4431,7 +4431,7 @@ export default function AdminPage() {
                     setLoginForm({ ...loginForm, password: e.target.value })
                   }
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-hue-red focus:border-transparent"
-                  placeholder="admin123"
+                  placeholder="Admin@12345"
                 />
               </div>
 

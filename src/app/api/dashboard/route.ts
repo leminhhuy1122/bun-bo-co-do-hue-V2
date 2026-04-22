@@ -224,11 +224,35 @@ export async function GET(request: NextRequest) {
     console.error("Dashboard API Error:", error);
     return NextResponse.json(
       {
-        success: false,
-        message: "Không thể tải dữ liệu dashboard",
-        error: error.message,
+        success: true,
+        data: {
+          revenue: {
+            total: 0,
+            orders: 0,
+            avgOrderValue: 0,
+            totalDiscount: 0,
+          },
+          orders: {
+            total: 0,
+            byStatus: [],
+          },
+          reservations: {
+            total: 0,
+            pending: 0,
+            confirmed: 0,
+            completed: 0,
+          },
+          customers: {
+            total: 0,
+          },
+          topItems: [],
+          revenueByDay: [],
+          paymentMethods: [],
+        },
+        fallback: true,
+        warning: "Không thể kết nối cơ sở dữ liệu, đang dùng dữ liệu dự phòng",
       },
-      { status: 500 }
+      { status: 200 }
     );
   }
 }

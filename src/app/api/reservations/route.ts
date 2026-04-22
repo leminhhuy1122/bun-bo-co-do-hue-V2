@@ -33,11 +33,12 @@ export async function GET(request: NextRequest) {
     console.error("Reservations GET Error:", error);
     return NextResponse.json(
       {
-        success: false,
-        error: "Không thể tải danh sách đặt bàn",
-        details: error.message,
+        success: true,
+        data: [],
+        fallback: true,
+        warning: "Không thể kết nối cơ sở dữ liệu, đang dùng dữ liệu dự phòng",
       },
-      { status: 500 }
+      { status: 200 }
     );
   }
 }

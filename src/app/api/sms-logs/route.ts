@@ -94,11 +94,25 @@ export async function GET(request: NextRequest) {
     console.error("SMS Logs GET Error:", error);
     return NextResponse.json(
       {
-        success: false,
-        error: "Không thể tải lịch sử SMS",
-        details: error.message,
+        success: true,
+        data: [],
+        stats: {
+          total: 0,
+          sent: 0,
+          failed: 0,
+          pending: 0,
+          total_cost: 0,
+        },
+        pagination: {
+          page: 1,
+          limit: 20,
+          total: 0,
+          totalPages: 0,
+        },
+        fallback: true,
+        warning: "Không thể kết nối cơ sở dữ liệu, đang dùng dữ liệu dự phòng",
       },
-      { status: 500 }
+      { status: 200 }
     );
   }
 }

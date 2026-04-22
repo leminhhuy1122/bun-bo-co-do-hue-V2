@@ -1,6 +1,7 @@
 // src/app/api/coupons/route.ts - API quản lý mã giảm giá
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, getNextSequence } from "@/lib/mongodb";
+import promosData from "@/data/promos.json";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -37,13 +38,45 @@ export async function GET(request: NextRequest) {
     );
   } catch (error: any) {
     console.error("Coupons GET Error:", error);
+
+    const fallbackCoupons = (promosData as any[]).map((promo, index) => ({
+      id: index + 1,
+      code: String(promo.code || "").toUpperCase(),
+      description: promo.description || null,
+      discount_type: promo.discountType === "fixed" ? "fixed" : "percentage",
+      discount_value: Number(promo.discountValue || 0),
+      min_order_amount: Number(promo.minOrderValue || 0),
+      max_discount_amount:
+        promo.maxDiscount === undefined || promo.maxDiscount === null
+          ? null
+          : Number(promo.maxDiscount),
+      usage_limit: null,
+      used_count: 0,
+      valid_from: null,
+      valid_until: promo.expiryDate ? new Date(promo.expiryDate) : null,
+      is_active: true,
+      show_in_popup: index < 3,
+      popup_priority: index + 1,
+      popup_badge: index === 0 ? "Hot" : index === 1 ? "Uu dai" : "Deal",
+      popup_gradient: "linear-gradient(135deg, #dc2626 0%, #f97316 100%)",
+      show_in_suggestions: index < 4,
+      suggestion_priority: index + 1,
+      suggestion_badge: index === 0 ? "Best" : null,
+    }));
+
     return NextResponse.json(
       {
-        success: false,
-        error: "Không thể tải mã giảm giá",
-        details: error.message,
+        success: true,
+        data: fallbackCoupons,
+        fallback: true,
+        warning: "Không thể kết nối cơ sở dữ liệu, đang dùng dữ liệu dự phòng",
       },
-      { status: 500 }
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      }
     );
   }
 }

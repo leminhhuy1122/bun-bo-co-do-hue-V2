@@ -179,11 +179,25 @@ export async function GET(request: NextRequest) {
     console.error("Stats API Error:", error);
     return NextResponse.json(
       {
-        success: false,
-        error: "Không thể tải thống kê",
-        details: error.message,
+        success: true,
+        data: {
+          today: {
+            revenue: 0,
+            orders: 0,
+            reservations: 0,
+          },
+          month: {
+            revenue: 0,
+            orders: 0,
+          },
+          ordersByStatus: [],
+          recentOrders: [],
+          topItems: [],
+        },
+        fallback: true,
+        warning: "Không thể kết nối cơ sở dữ liệu, đang dùng dữ liệu dự phòng",
       },
-      { status: 500 }
+      { status: 200 }
     );
   }
 }

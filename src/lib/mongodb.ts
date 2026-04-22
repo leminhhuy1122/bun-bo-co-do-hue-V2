@@ -75,9 +75,9 @@ async function connectMongoClient(): Promise<MongoClient> {
   const client = new MongoClient(resolvedUri, {
     retryReads: true,
     retryWrites: true,
-    serverSelectionTimeoutMS: 10000,
-    connectTimeoutMS: 10000,
-    socketTimeoutMS: 45000,
+    serverSelectionTimeoutMS: 4000,
+    connectTimeoutMS: 4000,
+    socketTimeoutMS: 10000,
     maxPoolSize: 20,
   });
   return client.connect();

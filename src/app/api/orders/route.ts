@@ -42,11 +42,18 @@ export async function GET(request: NextRequest) {
     console.error("Orders GET Error:", error);
     return NextResponse.json(
       {
-        success: false,
-        error: "Không thể tải đơn hàng",
-        details: error.message,
+        success: true,
+        data: [],
+        pagination: {
+          page: 1,
+          limit: 20,
+          total: 0,
+          totalPages: 0,
+        },
+        fallback: true,
+        warning: "Không thể kết nối cơ sở dữ liệu, đang dùng dữ liệu dự phòng",
       },
-      { status: 500 }
+      { status: 200 }
     );
   }
 }

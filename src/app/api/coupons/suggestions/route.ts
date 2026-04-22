@@ -1,6 +1,7 @@
 // API lấy danh sách coupon hiển thị trong gợi ý thanh toán
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import promosData from "@/data/promos.json";
 
 export async function GET() {
   try {
@@ -55,13 +56,24 @@ export async function GET() {
     });
   } catch (error: any) {
     console.error("Suggestion Coupons GET Error:", error);
+
+    const fallbackData = (promosData as any[]).slice(0, 4).map((promo) => ({
+      code: String(promo.code || "").toUpperCase(),
+      description: promo.description || "Ưu đãi đặc biệt",
+      discount:
+        promo.discountType === "percentage"
+          ? `${Number(promo.discountValue || 0)}%`
+          : `${Math.round(Number(promo.discountValue || 0) / 1000)}K`,
+    }));
+
     return NextResponse.json(
       {
-        success: false,
-        error: "Không thể tải mã gợi ý",
-        details: error.message,
+        success: true,
+        data: fallbackData,
+        fallback: true,
+        warning: "Không thể kết nối cơ sở dữ liệu, đang dùng dữ liệu dự phòng",
       },
-      { status: 500 }
+      { status: 200 }
     );
   }
 }

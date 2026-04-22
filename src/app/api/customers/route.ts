@@ -163,11 +163,19 @@ export async function GET(request: NextRequest) {
     console.error("Customers GET Error:", error);
     return NextResponse.json(
       {
-        success: false,
-        error: "Không thể tải danh sách khách hàng",
-        details: error.message,
+        success: true,
+        data: [],
+        stats: {
+          total: 0,
+          new: 0,
+          returning: 0,
+          vip: 0,
+          totalRevenue: 0,
+        },
+        fallback: true,
+        warning: "Không thể kết nối cơ sở dữ liệu, đang dùng dữ liệu dự phòng",
       },
-      { status: 500 }
+      { status: 200 }
     );
   }
 }
